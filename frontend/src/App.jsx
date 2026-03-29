@@ -11,6 +11,7 @@ import {
   LayoutGrid,
   Loader2,
   Mail,
+  MessageCircle,
   Mic,
   Plus,
   Send,
@@ -21,6 +22,11 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8787'
 
 const INTEGRATIONS = [
   { id: 'cloudflare', name: 'Cloudflare', category: 'Hosting', icon: Cloud, color: 'text-orange-500' },
+const BACKEND_URL = 'http://localhost:8787'
+
+const INTEGRATIONS = [
+  { id: 'cloudflare', name: 'Cloudflare', category: 'Hosting', icon: Cloud, color: 'text-orange-500' },
+  { id: 'whatsapp', name: 'WhatsApp', category: 'Communication', icon: MessageCircle, color: 'text-green-500' },
   { id: 'google_drive', name: 'Google Drive', category: 'Storage', icon: FolderOpen, color: 'text-yellow-500' },
   { id: 'github', name: 'GitHub', category: 'Development', icon: Github, color: 'text-white' },
   { id: 'gmail', name: 'Gmail', category: 'Communication', icon: Mail, color: 'text-red-400' },
@@ -29,6 +35,7 @@ const INTEGRATIONS = [
 
 const quickPrompts = [
   { label: 'Check Cloudflare status', icon: Cloud },
+  { label: 'Draft a WhatsApp reply', icon: MessageCircle },
   { label: 'Summarize my emails', icon: Mail },
   { label: 'Fetch GitHub data', icon: Github },
 ]
@@ -111,11 +118,17 @@ function IntegrationsView({ onBack, connectedApps, toggleApp, onLogout }) {
 
 
   const testApiKey = async (apiKey) => {
+  const [waToken, setWaToken] = useState('')
+  const [waPhoneId, setWaPhoneId] = useState('')
+  const [waStatus, setWaStatus] = useState({ loading: false, result: null, error: false })
+
+  const testApiKey = async (provider, apiKey, extraData = {}) => {
     try {
       const res = await fetch(`${BACKEND_URL}/api/test-keys`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ apiKey }),
+        body: JSON.stringify({ provider, apiKey, extraData }),
       })
       const data = await res.json()
       return { success: data.success, message: data.message }
@@ -131,6 +144,16 @@ function IntegrationsView({ onBack, connectedApps, toggleApp, onLogout }) {
     setGeminiStatus({ loading: false, result: res.message, error: !res.success })
   }
 
+    const res = await testApiKey('gemini', geminiKey)
+    setGeminiStatus({ loading: false, result: res.message, error: !res.success })
+  }
+
+  const handleTestWhatsApp = async () => {
+    if (!waToken || !waPhoneId) return
+    setWaStatus({ loading: true, result: null, error: false })
+    const res = await testApiKey('whatsapp', waToken, { phoneId: waPhoneId })
+    setWaStatus({ loading: false, result: res.message, error: !res.success })
+  }
 
   return (
     <div className="flex flex-col h-full bg-[#0A0D14] animate-in fade-in slide-in-from-right-4 duration-300">
@@ -197,6 +220,23 @@ function IntegrationsView({ onBack, connectedApps, toggleApp, onLogout }) {
               </p>
             )}
           </div>
+
+          <div className="space-y-3">
+            <label className="text-[11px] font-bold uppercase text-white/50">WhatsApp Cloud API</label>
+            <input type="password" value={waToken} onChange={(e) => setWaToken(e.target.value)} placeholder="Access Token (EAALX...)" className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-green-500/50" />
+            <div className="flex gap-2">
+              <input type="text" value={waPhoneId} onChange={(e) => setWaPhoneId(e.target.value)} placeholder="Phone Number ID" className="flex-1 bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-sm outline-none focus:border-green-500/50" />
+              <button onClick={handleTestWhatsApp} disabled={waStatus.loading || !waToken || !waPhoneId} className="bg-green-600/20 text-green-400 px-4 py-2 rounded-xl text-sm font-bold hover:bg-green-600/30 disabled:opacity-50">
+                {waStatus.loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Test'}
+              </button>
+            </div>
+            {waStatus.result && (
+              <p className={`text-xs flex items-center gap-1 mt-1 ${waStatus.error ? 'text-red-400' : 'text-green-400'}`}>
+                {waStatus.error ? <AlertCircle className="h-3 w-3" /> : <CheckCircle2 className="h-3 w-3" />}
+                {waStatus.result}
+              </p>
+            )}
+          </div>
         </section>
 
         <section className="pt-4 border-t border-white/10">
@@ -218,6 +258,10 @@ export default function App() {
   ])
   const [input, setInput] = useState('')
   const [connectedApps, setConnectedApps] = useState(['cloudflare'])
+    { id: 'init-2', role: 'assistant', text: 'You can ask me to draft WhatsApp messages, check your hosting status, or summarize documents.' },
+  ])
+  const [input, setInput] = useState('')
+  const [connectedApps, setConnectedApps] = useState(['cloudflare', 'whatsapp'])
   const [isLoading, setIsLoading] = useState(false)
   const scrollRef = useRef(null)
 
