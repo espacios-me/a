@@ -1,0 +1,9 @@
+name = "a"
+main = "src/index.ts"
+compatibility_date = "2024-02-22"
+
+[vars]
+# GEMINI_API_KEY = "..."
+# WHATSAPP_TOKEN = "..."
+# WHATSAPP_PHONE_ID = "..."
+# FRONTEND_ORIGIN = "..."
