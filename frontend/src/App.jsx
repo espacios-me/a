@@ -17,7 +17,7 @@ import {
   ArrowLeft
 } from "lucide-react";
 
-const BACKEND_URL = "https://a.espacios.workers.dev";
+const BACKEND_URL = "https://a.thekeifferjapeth.workers.dev";
 
 const INTEGRATIONS = [
   { id: 'cloudflare', name: 'Cloudflare', category: 'Hosting', icon: Cloud, color: 'text-orange-500' },
@@ -37,8 +37,8 @@ const quickPrompts = [
 function ChatBubble({ role, text }) {
   const isUser = role === "user";
   return (
-    <div className={`flex w-full ${isUser ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
-      <div className={`max-w-[85%] rounded-[24px] px-4 py-3 text-[15px] leading-relaxed shadow-lg backdrop-blur-md ${isUser ? "rounded-br-[4px] bg-blue-600 text-white" : "rounded-bl-[4px] border border-white/10 bg-white/5 text-white/90"}`}>
+    <div className={`flex w-full \${isUser ? "justify-end" : "justify-start"} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+      <div className={`max-w-[85%] rounded-[24px] px-4 py-3 text-[15px] leading-relaxed shadow-lg backdrop-blur-md \${isUser ? "rounded-br-[4px] bg-blue-600 text-white" : "rounded-bl-[4px] border border-white/10 bg-white/5 text-white/90"}`}>
         {text}
       </div>
     </div>
@@ -53,7 +53,7 @@ function LoginScreen({ onLogin }) {
     setIsConnecting(true);
     setError("");
     try {
-      const response = await fetch(`${BACKEND_URL}/api/auth/login`, {
+      const response = await fetch(`\${BACKEND_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ provider })
@@ -99,7 +99,7 @@ function LoginScreen({ onLogin }) {
             disabled={isConnecting}
             className="group flex w-full items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-4 py-4 text-[15px] font-medium capitalize transition-all hover:bg-white/10 hover:border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isConnecting ? <Loader2 className="h-5 w-5 animate-spin text-white/50" /> : `Continue with ${provider}`}
+            {isConnecting ? <Loader2 className="h-5 w-5 animate-spin text-white/50" /> : \`Continue with \${provider}\`}
           </button>
         ))}
       </div>
@@ -115,10 +115,10 @@ function IntegrationsView({ onBack, connectedApps, toggleApp, onLogout }) {
     if (!geminiKey) return;
     setGeminiStatus({ loading: true, result: null, error: false });
     try {
-      const res = await fetch(`${BACKEND_URL}/api/test-keys`, {
+      const res = await fetch(`\${BACKEND_URL}/api/test-keys`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ provider: 'gemini', apiKey: geminiKey })
+        body: JSON.stringify({ apiKey: geminiKey })
       });
       const data = await res.json();
       setGeminiStatus({ loading: false, result: data.message, error: !data.success });
@@ -148,17 +148,17 @@ function IntegrationsView({ onBack, connectedApps, toggleApp, onLogout }) {
               return (
                 <div key={app.id} className="flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-white/[0.02] transition-all hover:bg-white/[0.04]">
                   <div className="flex items-center gap-4">
-                    <div className={`h-10 w-10 flex items-center justify-center rounded-xl bg-white/5 ${app.color}`}>
+                    <div className={`h-10 w-10 flex items-center justify-center rounded-xl bg-white/5 \${app.color}`}>
                       <Icon className="h-5 w-5" />
                     </div>
                     <div>
-                      <h4 className="font-medium text-sm">{app.name}</h4>
-                      <p className="text-xs text-white/30">{app.category}</p>
+                      <h4 className="font-medium text-sm">\${app.name}</h4>
+                      <p className="text-xs text-white/30">\${app.category}</p>
                     </div>
                   </div>
                   <button
                     onClick={() => toggleApp(app.id)}
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all \${
                       isConnected ? "bg-green-500/10 text-green-400 border border-green-500/20" : "bg-white text-black hover:bg-white/90"
                     }`}
                   >
@@ -197,7 +197,7 @@ function IntegrationsView({ onBack, connectedApps, toggleApp, onLogout }) {
               </button>
             </div>
             {geminiStatus.result && (
-              <p className={`text-xs flex items-center gap-1 ${geminiStatus.error ? 'text-red-400' : 'text-green-400'}`}>
+              <p className={`text-xs flex items-center gap-1 \${geminiStatus.error ? 'text-red-400' : 'text-green-400'}`}>
                 {geminiStatus.error ? <AlertCircle className="h-3 w-3" /> : <CheckCircle2 className="h-3 w-3" />}
                 {geminiStatus.result}
               </p>
@@ -248,16 +248,16 @@ export default function App() {
   };
 
   const handleSend = async (rawText) => {
-    const text = rawText?.trim() || input.trim();
+    const text = rawText?.trim();
     if (!text || isLoading) return;
 
-    const userMessage = { id: `user-${Date.now()}`, role: "user", text };
+    const userMessage = { id: \`user-\${Date.now()}\`, role: "user", text };
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
 
     try {
-      const response = await fetch(`${BACKEND_URL}/api/chat`, {
+      const response = await fetch(\`\${BACKEND_URL}/api/chat\`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -268,101 +268,113 @@ export default function App() {
 
       if (!response.ok) throw new Error("Backend error");
       const data = await response.json();
-      setMessages(prev => [...prev, { id: `ai-${Date.now()}`, role: "assistant", text: data.reply }]);
+      setMessages(prev => [...prev, { id: \`ai-\${Date.now()}\`, role: "assistant", text: data.reply }]);
     } catch {
-      setMessages(prev => [...prev, { id: `err-${Date.now()}`, role: "assistant", text: "Network error. Is the Worker running?" }]);
+      setMessages(prev => [...prev, { id: \`err-\${Date.now()}\`, role: "assistant", text: "Network error. Is the Worker running?" }]);
     } finally {
       setIsLoading(false);
     }
   };
 
-  if (!isAuthenticated) {
-    return <LoginScreen onLogin={(user) => {
-      setCurrentUser(user);
-      setIsAuthenticated(true);
-    }} />;
-  }
-
-  if (view === "integrations") {
-    return (
-      <IntegrationsView
-        onBack={() => setView("chat")}
-        connectedApps={connectedApps}
-        toggleApp={toggleApp}
-        onLogout={handleLogout}
-      />
-    );
-  }
-
   return (
     <div className="flex h-screen w-full items-center justify-center bg-[#020408] sm:p-4 overflow-hidden font-sans text-white relative">
       <div className="relative flex h-full w-full max-w-md flex-col overflow-hidden sm:h-[800px] sm:rounded-[40px] border border-white/10 bg-[#0A0D14] shadow-2xl">
-        <header className="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-black/20 backdrop-blur-xl z-20">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-              <Sparkles className="h-4 w-4 text-white" />
-            </div>
-            <span className="font-bold tracking-tight">Atom</span>
-          </div>
-          <button onClick={() => setView('integrations')} className="p-2 rounded-xl hover:bg-white/5 text-white/60 hover:text-white transition-all">
-            <LayoutGrid className="h-5 w-5" />
-          </button>
-        </header>
-
-        <main ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6 space-y-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {messages.map((msg) => (
-            <ChatBubble key={msg.id} {...msg} />
-          ))}
-          {isLoading && (
-            <div className="flex justify-start animate-pulse">
-              <div className="bg-white/5 rounded-2xl rounded-bl-[4px] px-4 py-3 border border-white/10">
-                <Loader2 className="h-4 w-4 animate-spin text-white/40" />
-              </div>
-            </div>
-          )}
-        </main>
-
-        <footer className="p-4 pb-8 bg-gradient-to-t from-[#0A0D14] via-[#0A0D14] to-transparent z-20">
-          <div className="max-w-3xl mx-auto space-y-4">
-            {messages.length <= 2 && (
-              <div className="grid grid-cols-2 gap-2 px-2">
-                {quickPrompts.map((p) => (
-                  <button
-                    key={p.label}
-                    onClick={() => handleSend(p.label)}
-                    className="flex items-center gap-2 p-3 rounded-xl border border-white/5 bg-white/[0.02] text-[13px] text-white/50 hover:bg-white/5 hover:text-white/80 transition-all text-left"
-                  >
-                    <p.icon className="h-3.5 w-3.5" />
-                    {p.label}
-                  </button>
-                ))}
-              </div>
-            )}
-            
-            <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500/20 to-indigo-500/20 rounded-[26px] blur opacity-0 group-focus-within:opacity-100 transition duration-500" />
-              <div className="relative flex items-center gap-2 bg-[#161922] border border-white/10 rounded-[24px] p-2 pl-4 shadow-2xl">
-                <input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-                  placeholder="Ask Atom anything..."
-                  className="flex-1 bg-transparent border-none outline-none text-[15px] py-2 placeholder:text-white/20"
-                />
-                <button className="p-2 text-white/20 hover:text-white/60 transition-colors">
-                  <Mic className="h-5 w-5" />
-                </button>
+        {!isAuthenticated ? (
+          <LoginScreen onLogin={(user) => { setCurrentUser(user); setIsAuthenticated(true); }} />
+        ) : view === "chat" ? (
+          <>
+            <div className="absolute inset-x-0 top-0 z-30 border-b border-white/5 bg-[#0A0D14]/60 px-6 py-5 backdrop-blur-xl">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600">
+                    <Sparkles className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-400">Atom</p>
+                    <h1 className="text-xl font-bold text-white/95">chatspacr</h1>
+                  </div>
+                </div>
                 <button
-                  onClick={() => handleSend()}
-                  disabled={!input.trim() || isLoading}
-                  className="h-10 w-10 flex items-center justify-center rounded-full bg-blue-600 text-white shadow-lg shadow-blue-600/20 hover:bg-blue-500 disabled:opacity-50 disabled:grayscale transition-all"
+                  onClick={() => setView("integrations")}
+                  className="relative flex h-10 w-10 items-center justify-center rounded-full hover:bg-white/5 transition-colors"
                 >
-                  <Send className="h-4 w-4" />
+                  <LayoutGrid className="h-5 w-5 text-white/60" />
+                  {connectedApps.length > 0 && (
+                    <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-blue-500 border border-[#0A0D14]" />
+                  )}
                 </button>
               </div>
             </div>
-          </div>
-        </footer>
+
+            <div ref={scrollRef} className="flex-1 overflow-y-auto px-6 pb-44 pt-32 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="flex flex-col gap-5">
+                {messages.map((m) => <ChatBubble key={m.id} role={m.role} text={m.text} />)}
+                {isLoading && (
+                  <div className="flex w-full justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <div className="max-w-[85%] rounded-[24px] rounded-bl-[4px] border border-white/10 bg-white/5 px-4 py-3 shadow-lg backdrop-blur-md">
+                      <Loader2 className="h-5 w-5 animate-spin text-blue-400" />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-8">
+                <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.15em] text-white/30">Quick Actions</p>
+                <div className="flex flex-wrap gap-2">
+                  {quickPrompts.map((p) => (
+                    <button key={p.label} onClick={() => handleSend(p.label)} className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-white/70 hover:bg-white/10 transition-all">
+                      <p.icon className="h-3.5 w-3.5 text-blue-400" />
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="absolute inset-x-0 bottom-0 z-40 p-4 pb-8 sm:pb-6">
+              <div className="rounded-[28px] border border-white/10 bg-white/[0.03] p-2 shadow-2xl backdrop-blur-2xl ring-1 ring-white/5">
+                <div className="flex items-center gap-2">
+                  <button className="flex h-12 w-12 items-center justify-center rounded-[20px] bg-white/[0.05] text-white/60 hover:text-white transition-colors">
+                    <Plus className="h-5 w-5" />
+                  </button>
+                  <input
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSend(input)}
+                    placeholder="Message Atom..."
+                    className="flex-1 bg-transparent px-2 text-[15px] outline-none placeholder:text-white/30 disabled:opacity-50"
+                    disabled={isLoading}
+                  />
+                  <button
+                    onClick={() => handleSend(input)}
+                    disabled={!input.trim() || isLoading}
+                    className={`flex h-12 w-12 items-center justify-center rounded-[20px] transition-all \${input.trim() && !isLoading ? "bg-blue-600 text-white" : "bg-white/5 text-white/20"}`}
+                  >
+                    {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
+                  </button>
+                </div>
+                <div className="mt-2 flex items-center justify-between px-3 pt-1 border-t border-white/5">
+                  <div className="flex gap-2">
+                    {connectedApps.slice(0, 4).map(appId => {
+                      const app = INTEGRATIONS.find(a => a.id === appId);
+                      return app ? <app.icon key={appId} className={`h-3.5 w-3.5 \${app.color} opacity-60`} title={app.name} /> : null;
+                    })}
+                  </div>
+                  <button className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-white/30 hover:text-white transition-colors">
+                    <Mic className="h-3 w-3" /> Voice
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <IntegrationsView
+            onBack={() => setView("chat")}
+            connectedApps={connectedApps}
+            toggleApp={toggleApp}
+            onLogout={handleLogout}
+          />
+        )}
       </div>
     </div>
   );
