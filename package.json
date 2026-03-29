@@ -1,0 +1,13 @@
+{
+  "name": "atom-project",
+  "private": true,
+  "scripts": {
+    "dev": "npm run dev --workspace=frontend",
+    "build": "npm run build --workspace=frontend",
+    "deploy": "npm run deploy --workspace=worker"
+  },
+  "workspaces": [
+    "frontend",
+    "worker"
+  ]
+}
