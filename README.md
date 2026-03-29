@@ -28,6 +28,29 @@ This repo contains a cleaned starter setup for:
 npm create vite@latest atom-chat -- --template react
 cd atom-chat
 npm install
+npm install lucide-react
+```
+
+Copy `frontend/src/App.jsx` and `frontend/public/_redirects` into your project.
+
+## 2) Important config for `/coms` path hosting
+
+If your app is served at `https://espacios.me/coms`, Vite must use a `/coms/` base path.
+This repo includes a safe `vite.config.ts`:
+
+```ts
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+
+export default defineConfig({
+  plugins: [react()],
+  base: '/coms/',
+})
+```
+
+## 3) Cloudflare Pages build settings
+
+- Root directory: your frontend folder
 
 npm install -D tailwindcss postcss autoprefixer
 npx tailwindcss init -p
