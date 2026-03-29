@@ -1,0 +1,402 @@
+
+import React, { useMemo, useState } from "react";
+import {
+  Atom,
+  LayoutGrid,
+  Users,
+  Star,
+  ArrowUp,
+  Plus,
+  Mic,
+  CalendarDays,
+  Mail,
+  FolderOpen,
+  Command,
+} from "lucide-react";
+
+function TabButton({ active, onClick, icon: Icon, label, dot = false }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex flex-col items-center gap-1.5 p-2 transition-colors ${
+        active ? "text-white" : "text-white/30 hover:text-white/60"
+      }`}
+    >
+      <div className="relative">
+        <Icon className="h-6 w-6" strokeWidth={1.5} />
+        {dot && active && (
+          <div className="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full border-2 border-[#0E0E10] bg-white" />
+        )}
+      </div>
+      <span className="text-[10px] font-medium tracking-wide">{label}</span>
+    </button>
+  );
+}
+
+function ChatBubble({ user = false, children }) {
+  return (
+    <div className={`flex w-full ${user ? "justify-end" : "justify-start"}`}>
+      <div
+        className={`max-w-[85%] rounded-[20px] px-5 py-3.5 text-[15px] leading-relaxed ${
+          user
+            ? "rounded-br-[4px] bg-white text-black"
+            : "rounded-bl-[4px] border border-white/10 bg-white/5 text-white/90"
+        }`}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function AtomScreen() {
+  const quickPrompts = useMemo(
+    () => ["What's on my calendar?", "Summarize my emails", "Create a reminder"],
+    []
+  );
+  const [messages, setMessages] = useState([
+    {
+      id: 1,
+      user: false,
+      text: "Welcome to Atom. Your secure, intelligent workspace.",
+    },
+    { id: 2, user: true, text: "What's on my calendar?" },
+    {
+      id: 3,
+      user: false,
+      text: "You have 3 meetings today. First at 10:00 AM.",
+    },
+  ]);
+  const [input, setInput] = useState("");
+
+  const handleQuickPrompt = (text) => {
+    setMessages((prev) => [...prev, { id: Date.now(), user: true, text }]);
+  };
+
+  const handleSend = () => {
+    const text = input.trim();
+    if (!text) return;
+    setMessages((prev) => [...prev, { id: Date.now(), user: true, text }]);
+    setInput("");
+  };
+
+  return (
+    <div className="relative flex h-full flex-1 flex-col">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 bg-gradient-to-b from-[#0E0E10] to-transparent px-6 pb-4 pt-12" />
+
+      <div className="flex-1 overflow-y-auto px-5 pb-48 pt-16 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex flex-col gap-5">
+          {messages.map((message) => (
+            <ChatBubble key={message.id} user={message.user}>
+              {message.text}
+            </ChatBubble>
+          ))}
+        </div>
+      </div>
+
+      <div className="absolute inset-x-0 bottom-24 z-20 px-5">
+        <div className="flex gap-2 overflow-x-auto pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {quickPrompts.map((label) => (
+            <button
+              key={label}
+              onClick={() => handleQuickPrompt(label)}
+              className="shrink-0 rounded-full border border-white/10 bg-[#1A1C20] px-4 py-2 text-[13px] text-white/70 transition hover:bg-white/10 hover:text-white"
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex items-center gap-3 rounded-[24px] border border-white/10 bg-[#1A1C20] p-2 pl-4 pr-2 shadow-2xl">
+          <button className="text-white/40 transition-colors hover:text-white">
+            <Plus className="h-5 w-5" />
+          </button>
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleSend()}
+            placeholder="Write your message"
+            className="flex-1 bg-transparent px-2 py-2.5 text-[15px] text-white outline-none placeholder:text-white/40"
+          />
+          <div className="flex items-center gap-2">
+            <button className="px-1 text-white/40 transition-colors hover:text-white">
+              <Mic className="h-5 w-5" />
+            </button>
+            <button
+              onClick={handleSend}
+              disabled={!input.trim()}
+              className={`flex h-9 w-9 items-center justify-center rounded-full transition-all ${
+                input.trim() ? "bg-white text-black" : "bg-white/5 text-white/20"
+              }`}
+            >
+              <ArrowUp className="h-4 w-4" strokeWidth={3} />
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PlaceholderScreen({ icon: Icon, title, subtitle }) {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center px-8 text-center text-white/30">
+      <div className="mb-4 rounded-3xl border border-white/10 bg-white/[0.03] p-5">
+        <Icon className="h-10 w-10 opacity-70" strokeWidth={1.5} />
+      </div>
+      <h2 className="text-lg font-medium text-white/80">{title}</h2>
+      <p className="mt-2 max-w-[240px] text-sm leading-relaxed text-white/40">{subtitle}</p>
+    </div>
+  );
+}
+
+function MemoryCard({ title, value, meta }) {
+  return (
+    <div className="rounded-[24px] border border-white/8 bg-white/[0.03] p-4">
+      <div className="text-[11px] uppercase tracking-[0.18em] text-white/35">{title}</div>
+      <div className="mt-2 text-2xl font-semibold text-white">{value}</div>
+      <div className="mt-1 text-xs text-white/45">{meta}</div>
+    </div>
+  );
+}
+
+function MemoryRow({ title, detail, tag }) {
+  return (
+    <div className="flex items-start justify-between gap-3 rounded-2xl border border-white/8 bg-white/[0.025] p-4">
+      <div>
+        <div className="text-sm font-medium text-white/90">{title}</div>
+        <div className="mt-1 text-xs leading-relaxed text-white/45">{detail}</div>
+      </div>
+      <div className="shrink-0 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] uppercase tracking-wide text-white/60">
+        {tag}
+      </div>
+    </div>
+  );
+}
+
+function PanelScreen() {
+  return (
+    <div className="flex h-full flex-col bg-[#0E0E10] text-white">
+      <div className="px-6 pb-4 pt-14">
+        <div className="text-center text-[15px] font-bold uppercase tracking-widest text-white">
+          Memory Panel
+        </div>
+        <p className="mt-2 text-center text-xs leading-relaxed text-white/40">
+          Your second brain: memories, summaries, patterns, and context.
+        </p>
+      </div>
+
+      <div className="flex-1 space-y-6 overflow-y-auto px-5 pb-32 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="grid grid-cols-2 gap-3">
+          <MemoryCard title="Memories" value="128" meta="Saved from email, docs, chat" />
+          <MemoryCard title="Contexts" value="24" meta="Active areas of focus" />
+        </div>
+
+        <div className="rounded-[28px] border border-white/5 bg-[#17171A] p-5 shadow-xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-[17px] font-medium text-white">Recent Memory</h3>
+              <p className="mt-1 text-xs text-white/45">What Atom currently remembers about you</p>
+            </div>
+            <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] uppercase tracking-wide text-white/60">
+              Live
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            <MemoryRow
+              title="You prioritize fast, minimal interfaces"
+              detail="Observed across product direction, UI comments, and app feedback."
+              tag="Pattern"
+            />
+            <MemoryRow
+              title="Atom is evolving into a second-brain workspace"
+              detail="Panel should surface memory, summaries, and relationships instead of generic widgets."
+              tag="Product"
+            />
+            <MemoryRow
+              title="Google Workspace is the first core integration"
+              detail="Calendar, Gmail, and Docs are central to the first useful version."
+              tag="Source"
+            />
+          </div>
+        </div>
+
+        <div className="rounded-[28px] border border-white/5 bg-[#17171A] p-5 shadow-xl">
+          <h3 className="text-[17px] font-medium text-white">Memory Streams</h3>
+          <p className="mt-1 text-xs text-white/45">Clusters of what the system is learning</p>
+
+          <div className="mt-4 space-y-3">
+            <MemoryRow
+              title="Work"
+              detail="Projects, product ideas, shipping tasks, deployment notes."
+              tag="12 items"
+            />
+            <MemoryRow
+              title="Relationships"
+              detail="People you collaborate with, shared threads, and follow-ups."
+              tag="8 items"
+            />
+            <MemoryRow
+              title="Preferences"
+              detail="Design taste, workflows, recurring requests, and tools you prefer."
+              tag="19 items"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function IntegrationsScreen() {
+  const [toggles, setToggles] = useState({
+    keiffer: true,
+    team: true,
+    property: false,
+  });
+
+  const handleToggle = (key) => {
+    setToggles((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+
+  return (
+    <div className="flex h-full flex-col bg-[#0E0E10] text-white">
+      <div className="px-6 pb-4 pt-14">
+        <h2 className="text-center text-[15px] font-bold uppercase tracking-widest text-white">
+          Atom Integrations
+        </h2>
+      </div>
+
+      <div className="flex-1 space-y-8 overflow-y-auto px-5 pb-32 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="rounded-[28px] border border-white/5 bg-[#17171A] p-5 shadow-xl">
+          <div className="mb-6 flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/5">
+              <Mail className="h-6 w-6 text-white/80" />
+            </div>
+            <div>
+              <h3 className="text-[17px] font-medium text-white">Connect Google Workspace</h3>
+              <p className="mt-1 text-xs leading-relaxed text-white/50">
+                Connect your full suite of Google Workspace apps.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            {[
+              { id: "keiffer", label: "keifferjapeth@gmail.com", avatar: "K" },
+              { id: "team", label: "thekeifferjapeth@gmail.com", avatar: "T" },
+              { id: "property", label: "propertiestage@gmail.com", avatar: "P" },
+            ].map((account) => (
+              <button
+                key={account.id}
+                onClick={() => handleToggle(account.id)}
+                className="flex w-full items-center justify-between rounded-2xl border border-white/5 bg-white/[0.03] p-3 pl-4 text-left transition hover:bg-white/[0.06]"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-neutral-600 text-xs font-medium text-white">
+                    {account.avatar}
+                  </div>
+                  <span className="max-w-[180px] truncate text-sm font-medium text-white/90">
+                    {account.label}
+                  </span>
+                </div>
+                <div
+                  className={`flex h-6 w-11 items-center rounded-full p-1 transition-colors ${
+                    toggles[account.id] ? "bg-white" : "bg-neutral-600"
+                  }`}
+                >
+                  <div
+                    className={`h-4 w-4 rounded-full bg-black shadow-sm transition-transform ${
+                      toggles[account.id] ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </div>
+              </button>
+            ))}
+
+            <button className="flex w-full items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.03] p-4 text-sm font-medium text-white/70 transition hover:bg-white/[0.06]">
+              <Plus className="h-5 w-5" />
+              Add Workspace account
+            </button>
+          </div>
+
+          <div className="mt-5 flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-white/70">
+              <CalendarDays className="h-4 w-4" /> Google Calendar
+            </div>
+            <div className="flex shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-white/70">
+              <Mail className="h-4 w-4" /> Gmail
+            </div>
+            <div className="flex shrink-0 items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-white/70">
+              <FolderOpen className="h-4 w-4" /> Google Docs
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 className="mb-4 text-lg font-medium text-white">Request an integration</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-[24px] border border-white/5 bg-[#17171A] p-5">
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/5">
+                <LayoutGrid className="h-5 w-5" />
+              </div>
+              <h4 className="mb-1.5 text-sm font-medium text-white">Microsoft 365</h4>
+              <p className="text-[11px] leading-relaxed text-white/50">
+                Email, calendars, docs, sheets, enterprise accounts.
+              </p>
+            </div>
+
+            <div className="rounded-[24px] border border-white/5 bg-[#17171A] p-5">
+              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-white/5 text-white">
+                <Command className="h-5 w-5" />
+              </div>
+              <h4 className="mb-1.5 text-sm font-medium text-white">Apple Ecosystem</h4>
+              <p className="text-[11px] leading-relaxed text-white/50">
+                High penetration among prosumers; deep personal workflows.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function AtomFullPreview() {
+  const [activeTab, setActiveTab] = useState("atom");
+
+  return (
+    <div className="flex h-screen w-full items-center justify-center bg-black p-4">
+      <div className="relative flex h-full max-h-[800px] w-full max-w-[370px] flex-col overflow-hidden rounded-[40px] border border-white/10 bg-[#0E0E10] shadow-2xl">
+        {activeTab === "atom" && <AtomScreen />}
+        {activeTab === "integrations" && <IntegrationsScreen />}
+        {activeTab === "panel" && <PanelScreen />}
+        {activeTab === "friends" && (
+          <PlaceholderScreen
+            icon={Users}
+            title="Friends"
+            subtitle="Shared spaces, people, and collaborative context will show up here."
+          />
+        )}
+
+        <div className="absolute inset-x-0 bottom-0 z-50 flex h-24 items-start justify-around border-t border-white/5 bg-[#0E0E10]/90 px-2 pt-3 backdrop-blur-xl">
+          <TabButton active={activeTab === "atom"} onClick={() => setActiveTab("atom")} icon={Atom} label="Atom" />
+          <TabButton active={activeTab === "panel"} onClick={() => setActiveTab("panel")} icon={LayoutGrid} label="Panel" />
+          <TabButton active={activeTab === "friends"} onClick={() => setActiveTab("friends")} icon={Users} label="Friends" />
+          <TabButton
+            active={activeTab === "integrations"}
+            onClick={() => setActiveTab("integrations")}
+            icon={Star}
+            label="Integrations"
+            dot
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
+
