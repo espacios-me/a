@@ -3,12 +3,21 @@ import { cors } from 'hono/cors'
 
 type Bindings = {
   GEMINI_API_KEY: string
+  FRONTEND_ORIGIN?: string
   WHATSAPP_TOKEN: string
   WHATSAPP_PHONE_ID: string
 }
 
 const app = new Hono<{ Bindings: Bindings }>()
 
+app.use('/api/*', async (c, next) => {
+  const origin = c.env.FRONTEND_ORIGIN || '*'
+  return cors({
+    origin,
+    allowHeaders: ['Content-Type', 'Authorization'],
+    allowMethods: ['POST', 'GET', 'OPTIONS'],
+  })(c, next)
+})
 app.use('/api/*', cors({
   origin: '*',
   allowHeaders: ['Content-Type', 'Authorization'],
@@ -31,6 +40,22 @@ app.post('/api/auth/login', async (c) => {
 })
 
 app.post('/api/test-keys', async (c) => {
+  const { apiKey } = await c.req.json()
+
+  if (!apiKey) {
+    return c.json({ success: false, message: 'Missing Gemini API key.' }, 400)
+  }
+
+  try {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents: [{ parts: [{ text: "reply 'ok'" }] }] }),
+    })
+
+    if (res.ok) return c.json({ success: true, message: 'Gemini API Key is valid and working!' })
+    return c.json({ success: false, message: 'Invalid Gemini API Key.' }, 400)
   const { provider, apiKey, extraData } = await c.req.json()
 
   try {

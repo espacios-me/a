@@ -18,6 +18,10 @@ import {
   Sparkles,
 } from 'lucide-react'
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8787'
+
+const INTEGRATIONS = [
+  { id: 'cloudflare', name: 'Cloudflare', category: 'Hosting', icon: Cloud, color: 'text-orange-500' },
 const BACKEND_URL = 'http://localhost:8787'
 
 const INTEGRATIONS = [
@@ -112,6 +116,8 @@ function IntegrationsView({ onBack, connectedApps, toggleApp, onLogout }) {
   const [geminiKey, setGeminiKey] = useState('')
   const [geminiStatus, setGeminiStatus] = useState({ loading: false, result: null, error: false })
 
+
+  const testApiKey = async (apiKey) => {
   const [waToken, setWaToken] = useState('')
   const [waPhoneId, setWaPhoneId] = useState('')
   const [waStatus, setWaStatus] = useState({ loading: false, result: null, error: false })
@@ -121,6 +127,7 @@ function IntegrationsView({ onBack, connectedApps, toggleApp, onLogout }) {
       const res = await fetch(`${BACKEND_URL}/api/test-keys`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ apiKey }),
         body: JSON.stringify({ provider, apiKey, extraData }),
       })
       const data = await res.json()
@@ -133,6 +140,10 @@ function IntegrationsView({ onBack, connectedApps, toggleApp, onLogout }) {
   const handleTestGemini = async () => {
     if (!geminiKey) return
     setGeminiStatus({ loading: true, result: null, error: false })
+    const res = await testApiKey(geminiKey)
+    setGeminiStatus({ loading: false, result: res.message, error: !res.success })
+  }
+
     const res = await testApiKey('gemini', geminiKey)
     setGeminiStatus({ loading: false, result: res.message, error: !res.success })
   }
@@ -243,6 +254,10 @@ export default function App() {
   const [view, setView] = useState('chat')
   const [messages, setMessages] = useState([
     { id: 'init-1', role: 'assistant', text: 'Welcome back. I am securely connected to your Cloudflare backend.' },
+    { id: 'init-2', role: 'assistant', text: 'You can ask me to check hosting status or summarize documents.' },
+  ])
+  const [input, setInput] = useState('')
+  const [connectedApps, setConnectedApps] = useState(['cloudflare'])
     { id: 'init-2', role: 'assistant', text: 'You can ask me to draft WhatsApp messages, check your hosting status, or summarize documents.' },
   ])
   const [input, setInput] = useState('')

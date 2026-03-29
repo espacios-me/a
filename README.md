@@ -1,6 +1,6 @@
 # Atom on Cloudflare Pages + Workers
 
-This repo contains a cleaned, non-duplicated starter setup for:
+This repo contains a cleaned starter setup for:
 
 - **Frontend**: React + Vite app (`frontend/`)
 - **Backend**: Cloudflare Worker API powered by Hono (`worker/`)
@@ -9,6 +9,9 @@ This repo contains a cleaned, non-duplicated starter setup for:
 
 - Host the React app on **Cloudflare Pages**.
 - Deploy the Hono API as a **Cloudflare Worker**.
+- Set `VITE_BACKEND_URL` in Pages to your Worker URL.
+
+## 1) Frontend setup
 - Point `BACKEND_URL` in the frontend to your deployed Worker URL.
 
 ---
@@ -55,6 +58,28 @@ In **Cloudflare Dashboard → Workers & Pages → Create Application → Pages �
 - Build command: `npm run build`
 - Build output directory: `dist`
 
+### Environment variable (Pages)
+
+Add this in Pages settings:
+
+- `VITE_BACKEND_URL=https://your-worker-name.your-subdomain.workers.dev`
+
+## 4) Worker setup
+
+Use `worker/src/index.ts` and configure these env vars in Worker settings:
+
+- `GEMINI_API_KEY` (Secret)
+- `FRONTEND_ORIGIN` (Plain text, example: `https://espacios.me`)
+
+## 5) SPA routing on Pages
+
+`frontend/public/_redirects`:
+
+```txt
+/* /index.html 200
+```
+
+This ensures client-side routes resolve correctly.
 Save and deploy.
 
 ## 4) Deploy backend Worker
