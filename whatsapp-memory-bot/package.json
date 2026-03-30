@@ -1,0 +1,24 @@
+{
+  "name": "atom-memory-whatsapp-bot",
+  "version": "2.0.0",
+  "description": "WhatsApp memory and reminder assistant for Atom",
+  "keywords": ["whatsapp", "memory", "reminders", "openai", "atom"],
+  "license": "BSD",
+  "author": "OpenAI + Meta starter refactor",
+  "type": "commonjs",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "node --watch app.js",
+    "check": "node --check app.js && node --check config.js && node --check constants.js && node --check message.js && node --check graph-api.js && node --check redis.js && node --check memory.js && node --check openai-service.js && node --check conversation.js && node --check status.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "dotenv": "^16.4.1",
+    "express": "^4.18.2",
+    "facebook-nodejs-business-sdk": "^23.0.1",
+    "googleapis": "^140.0.0",
+    "openai": "^4.28.0",
+    "redis": "^5.8.2"
+  }
+}
