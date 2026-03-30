@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Github, ExternalLink, Lock, Globe, Calendar } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
 
 interface Repository {
   id: number
@@ -77,10 +77,10 @@ export const GitHubReposBrowser: React.FC<GitHubReposBrowserProps> = ({ accessTo
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64 bg-gradient-to-br from-slate-900/50 to-slate-800/50 rounded-lg border border-slate-700/50 backdrop-blur-sm">
+      <div className="flex items-center justify-center h-64 bg-gray-50 dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-3"></div>
-          <p className="text-slate-300">Loading repositories...</p>
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-2 border-gray-300 dark:border-gray-700 border-t-black dark:border-t-white mb-3"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading repositories...</p>
         </div>
       </div>
     )
@@ -88,19 +88,20 @@ export const GitHubReposBrowser: React.FC<GitHubReposBrowserProps> = ({ accessTo
 
   if (error) {
     return (
-      <div className="bg-red-900/20 border border-red-700/50 rounded-lg p-4 backdrop-blur-sm">
-        <p className="text-red-300">Error: {error}</p>
-      </div>
+      <Card variant="flat">
+        <CardContent>
+          <p className="text-red-600 dark:text-red-400">Error: {error}</p>
+        </CardContent>
+      </Card>
     )
   }
 
   return (
     <div className="space-y-4">
       {/* Header */}
-      <div className="flex items-center gap-2 mb-6">
-        <Github className="w-6 h-6 text-blue-400" />
-        <h2 className="text-2xl font-bold text-white">GitHub Repositories</h2>
-        <span className="ml-auto text-sm text-slate-400">{filteredRepos.length} repositories</span>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold">GitHub Repositories</h2>
+        <span className="text-sm text-gray-600 dark:text-gray-400">{filteredRepos.length} repositories</span>
       </div>
 
       {/* Search and Sort Controls */}
@@ -110,12 +111,12 @@ export const GitHubReposBrowser: React.FC<GitHubReposBrowserProps> = ({ accessTo
           placeholder="Search repositories..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="flex-1 px-4 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 backdrop-blur-sm transition"
+          className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-black dark:focus:border-white transition-smooth"
         />
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as 'updated' | 'name')}
-          className="px-4 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 backdrop-blur-sm transition"
+          className="px-4 py-2.5 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-black dark:text-white focus:outline-none focus:border-black dark:focus:border-white transition-smooth"
         >
           <option value="updated">Recently Updated</option>
           <option value="name">Name (A-Z)</option>
@@ -124,10 +125,11 @@ export const GitHubReposBrowser: React.FC<GitHubReposBrowserProps> = ({ accessTo
 
       {/* Repository Grid */}
       {filteredRepos.length === 0 ? (
-        <div className="text-center py-12 bg-gradient-to-br from-slate-900/50 to-slate-800/50 rounded-lg border border-slate-700/50 backdrop-blur-sm">
-          <Github className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-          <p className="text-slate-400">No repositories found</p>
-        </div>
+        <Card variant="flat">
+          <CardContent className="text-center py-12">
+            <p className="text-gray-600 dark:text-gray-400">No repositories found</p>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredRepos.map((repo) => (
@@ -136,43 +138,27 @@ export const GitHubReposBrowser: React.FC<GitHubReposBrowserProps> = ({ accessTo
               href={repo.htmlUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="group bg-gradient-to-br from-slate-900/50 to-slate-800/50 border border-slate-700/50 rounded-lg p-4 backdrop-blur-sm hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/10 transition-all duration-300"
+              className="group card-ios hover:shadow-lg p-4"
             >
               {/* Repository Name */}
               <div className="flex items-start justify-between mb-2">
-                <h3 className="text-lg font-semibold text-white group-hover:text-blue-400 transition truncate">
+                <h3 className="text-lg font-semibold text-black dark:text-white group-hover:opacity-80 transition truncate">
                   {repo.name}
                 </h3>
-                <ExternalLink className="w-4 h-4 text-slate-500 group-hover:text-blue-400 transition flex-shrink-0 ml-2" />
               </div>
 
               {/* Full Name */}
-              <p className="text-sm text-slate-400 mb-3 truncate">{repo.fullName}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 truncate">{repo.fullName}</p>
 
               {/* Description */}
               {repo.description && (
-                <p className="text-sm text-slate-300 mb-4 line-clamp-2">{repo.description}</p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-4 line-clamp-2">{repo.description}</p>
               )}
 
               {/* Metadata */}
-              <div className="flex items-center gap-4 text-xs text-slate-400">
-                <div className="flex items-center gap-1">
-                  {repo.private ? (
-                    <>
-                      <Lock className="w-3 h-3" />
-                      <span>Private</span>
-                    </>
-                  ) : (
-                    <>
-                      <Globe className="w-3 h-3" />
-                      <span>Public</span>
-                    </>
-                  )}
-                </div>
-                <div className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3" />
-                  <span>{formatDate(repo.updatedAt)}</span>
-                </div>
+              <div className="flex items-center gap-4 text-xs text-gray-600 dark:text-gray-400 pt-4 border-t border-gray-200 dark:border-gray-800">
+                <span>{repo.private ? '🔒 Private' : '🌐 Public'}</span>
+                <span>📅 {formatDate(repo.updatedAt)}</span>
               </div>
             </a>
           ))}

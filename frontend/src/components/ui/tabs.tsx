@@ -40,7 +40,7 @@ export const Tabs: React.FC<TabsProps> = ({ defaultValue = '', children, classNa
 
 export const TabsList: React.FC<TabsListProps> = ({ children, className = '' }) => {
   return (
-    <div className={`flex gap-2 border-b border-slate-700/50 ${className}`}>
+    <div className={`flex gap-1 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-black ${className}`}>
       {children}
     </div>
   )
@@ -53,13 +53,16 @@ export const TabsTrigger: React.FC<TabsTriggerProps> = ({ value, children, class
   return (
     <button
       onClick={() => setActiveTab(value)}
-      className={`px-4 py-2 font-medium transition-colors ${
+      className={`px-4 py-3 font-semibold text-sm transition-smooth relative ${
         isActive
-          ? 'text-white border-b-2 border-blue-500'
-          : 'text-slate-400 hover:text-slate-300'
+          ? 'text-black dark:text-white'
+          : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
       } ${className}`}
     >
       {children}
+      {isActive && (
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-black dark:bg-white" />
+      )}
     </button>
   )
 }
@@ -69,5 +72,5 @@ export const TabsContent: React.FC<TabsContentProps> = ({ value, children, class
 
   if (activeTab !== value) return null
 
-  return <div className={className}>{children}</div>
+  return <div className={`animate-fade-in ${className}`}>{children}</div>
 }

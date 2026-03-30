@@ -1,8 +1,8 @@
 import React from 'react'
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/hooks/useAuth'
 import { useLocation } from 'wouter'
-import { Zap, Shield, Cpu, ArrowRight } from 'lucide-react'
 
 export default function Home() {
   const { user, loading } = useAuth()
@@ -10,94 +10,95 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-950 to-slate-900">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
+        <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-300 dark:border-gray-700 border-t-black dark:border-t-white"></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white overflow-hidden">
-      {/* Animated background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-600/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-      </div>
-
+    <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white">
       {/* Header */}
-      <header className="relative z-10 border-b border-slate-800/50 backdrop-blur-sm">
+      <header className="border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Cpu className="w-8 h-8 text-blue-400" />
-            <span className="text-2xl font-bold">Integrations Hub</span>
+          <div>
+            <h1 className="text-2xl font-bold">Integrations</h1>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Connect all your services</p>
           </div>
-          <div className="flex items-center gap-4">
-            {user ? (
-              <>
-                <span className="text-slate-400">Welcome, {user.name}</span>
-                <Button
-                  onClick={() => setLocation('/integrations')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition flex items-center gap-2"
-                >
-                  Go to Dashboard
-                  <ArrowRight className="w-4 h-4" />
-                </Button>
-              </>
-            ) : (
-              <Button
-                onClick={() => setLocation('/integrations')}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition"
-              >
-                Sign In
-              </Button>
-            )}
-          </div>
+          {user ? (
+            <Button onClick={() => setLocation('/integrations')} variant="primary">
+              Dashboard
+            </Button>
+          ) : (
+            <Button onClick={() => setLocation('/integrations')} variant="primary">
+              Get Started
+            </Button>
+          )}
         </div>
       </header>
 
       {/* Hero Section */}
-      <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-32">
         <div className="text-center mb-20">
-          <h1 className="text-6xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+          <h1 className="text-5xl sm:text-6xl font-bold mb-6 leading-tight">
             Connect Everything
           </h1>
-          <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto">
-            Manage all your integrations in one place. Connect GitHub, Gmail, Google Drive, WhatsApp, Cloudflare, and more with our AI-powered dashboard.
+          <p className="text-xl text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed">
+            Manage all your integrations in one elegant, unified interface. Connect GitHub, Gmail, Google Drive, WhatsApp, Cloudflare, and more.
           </p>
           <Button
             onClick={() => setLocation('/integrations')}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-lg text-lg font-semibold transition inline-flex items-center gap-2"
+            variant="primary"
+            size="lg"
+            className="px-8 py-3"
           >
-            Get Started
-            <ArrowRight className="w-5 h-5" />
+            Explore Now
           </Button>
         </div>
 
         {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
-          <div className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border border-slate-700/50 rounded-lg p-8 backdrop-blur-sm hover:border-blue-500/50 transition">
-            <Zap className="w-12 h-12 text-blue-400 mb-4" />
-            <h3 className="text-xl font-semibold mb-3">Lightning Fast</h3>
-            <p className="text-slate-400">
-              Powered by Cloudflare Workers for instant, globally distributed performance.
-            </p>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
+          <Card variant="flat">
+            <CardContent>
+              <div className="mb-4">
+                <div className="w-12 h-12 rounded-xl bg-black dark:bg-white flex items-center justify-center mb-4">
+                  <span className="text-2xl">⚡</span>
+                </div>
+              </div>
+              <CardTitle>Lightning Fast</CardTitle>
+              <CardDescription>
+                Powered by Cloudflare Workers for instant, globally distributed performance.
+              </CardDescription>
+            </CardContent>
+          </Card>
 
-          <div className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border border-slate-700/50 rounded-lg p-8 backdrop-blur-sm hover:border-purple-500/50 transition">
-            <Shield className="w-12 h-12 text-purple-400 mb-4" />
-            <h3 className="text-xl font-semibold mb-3">Secure & Private</h3>
-            <p className="text-slate-400">
-              End-to-end encryption for all your credentials. Your data stays yours.
-            </p>
-          </div>
+          <Card variant="flat">
+            <CardContent>
+              <div className="mb-4">
+                <div className="w-12 h-12 rounded-xl bg-black dark:bg-white flex items-center justify-center mb-4">
+                  <span className="text-2xl">🔒</span>
+                </div>
+              </div>
+              <CardTitle>Secure & Private</CardTitle>
+              <CardDescription>
+                End-to-end encryption for all your credentials. Your data stays yours.
+              </CardDescription>
+            </CardContent>
+          </Card>
 
-          <div className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border border-slate-700/50 rounded-lg p-8 backdrop-blur-sm hover:border-pink-500/50 transition">
-            <Cpu className="w-12 h-12 text-pink-400 mb-4" />
-            <h3 className="text-xl font-semibold mb-3">AI-Powered</h3>
-            <p className="text-slate-400">
-              Interact with all your services through a single Gemini-powered chatbox.
-            </p>
-          </div>
+          <Card variant="flat">
+            <CardContent>
+              <div className="mb-4">
+                <div className="w-12 h-12 rounded-xl bg-black dark:bg-white flex items-center justify-center mb-4">
+                  <span className="text-2xl">🤖</span>
+                </div>
+              </div>
+              <CardTitle>AI-Powered</CardTitle>
+              <CardDescription>
+                Interact with all your services through a single Gemini-powered chatbox.
+              </CardDescription>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Supported Integrations */}
@@ -105,20 +106,19 @@ export default function Home() {
           <h2 className="text-3xl font-bold mb-12">Supported Integrations</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {['GitHub', 'Gmail', 'Outlook', 'Google Drive', 'WhatsApp', 'Cloudflare'].map((service) => (
-              <div
-                key={service}
-                className="bg-gradient-to-br from-slate-900/50 to-slate-800/50 border border-slate-700/50 rounded-lg p-4 backdrop-blur-sm hover:border-blue-500/50 transition text-center"
-              >
-                <p className="font-semibold text-slate-300">{service}</p>
-              </div>
+              <Card key={service} variant="flat">
+                <CardContent className="text-center">
+                  <p className="font-semibold text-sm">{service}</p>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
-      </main>
+      </section>
 
       {/* Footer */}
-      <footer className="relative z-10 border-t border-slate-800/50 backdrop-blur-sm mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-slate-400">
+      <footer className="border-t border-gray-200 dark:border-gray-800 mt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-gray-600 dark:text-gray-400 text-sm">
           <p>&copy; 2026 Integrations Hub. All rights reserved.</p>
         </div>
       </footer>
