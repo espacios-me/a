@@ -141,7 +141,7 @@ textarea {
   font-family: inherit;
   font-size: inherit;
   color: hsl(var(--foreground));
-  transition-smooth;
+  transition: all 0.3s ease-out;
 }
 
 input:focus,
@@ -184,4 +184,18 @@ input::placeholder {
   body {
     font-size: 15px;
   }
+}
+
+/* Utility classes */
+.transition-smooth {
+  transition: all 0.3s ease-out;
+}
+
+.glass-effect {
+  backdrop-filter: blur(12px);
+  background-color: rgba(255, 255, 255, 0.8);
+}
+
+.dark .glass-effect {
+  background-color: rgba(0, 0, 0, 0.5);
 }
