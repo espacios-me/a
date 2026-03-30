@@ -1,0 +1,17 @@
+name = "espacios-me-a"
+main = "src/espacios-a.ts"
+compatibility_date = "2026-03-30"
+
+[assets]
+directory = "../edge-static"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+run_worker_first = true
+
+[[routes]]
+pattern = "espacios.me/a"
+zone_name = "espacios.me"
+
+[[routes]]
+pattern = "espacios.me/a/*"
+zone_name = "espacios.me"
