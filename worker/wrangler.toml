@@ -1,9 +1,31 @@
-name = "a"
+name = "integrations-hub"
 main = "src/index.ts"
 compatibility_date = "2024-02-22"
+type = "service"
+
+[env.production]
+name = "integrations-hub-prod"
+routes = [
+  { pattern = "api.example.com/*", zone_name = "example.com" }
+]
 
 [vars]
+# Add your environment variables here
 # GEMINI_API_KEY = "..."
+# GITHUB_CLIENT_ID = "..."
+# GITHUB_CLIENT_SECRET = "..."
+# GOOGLE_CLIENT_ID = "..."
+# GOOGLE_CLIENT_SECRET = "..."
+# MICROSOFT_CLIENT_ID = "..."
+# MICROSOFT_CLIENT_SECRET = "..."
 # WHATSAPP_TOKEN = "..."
 # WHATSAPP_PHONE_ID = "..."
-# FRONTEND_ORIGIN = "..."
+# WHATSAPP_CLIENT_ID = "..."
+# WHATSAPP_CLIENT_SECRET = "..."
+# CLOUDFLARE_CLIENT_ID = "..."
+# CLOUDFLARE_CLIENT_SECRET = "..."
+# FRONTEND_ORIGIN = "https://integrations-hub.pages.dev"
+
+[build]
+command = "npm run build"
+cwd = "./"

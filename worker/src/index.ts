@@ -1,11 +1,12 @@
 import { Hono } from 'hono'
+import { fetchRequestHandler } from '@trpc/server/adapters/fetch'
+import { appRouter } from './routers'
+import { createContext } from './_core/trpc'
 import { cors } from 'hono/cors'
+import oauthApp from './oauth-callback'
 
 type Bindings = {
   GEMINI_API_KEY: string
-  FRONTEND_ORIGIN?: string
-}
-
   GEMINI_MODEL?: string
   FRONTEND_ORIGIN?: string
   WHATSAPP_TOKEN?: string
@@ -31,7 +32,6 @@ app.use('/api/*', async (c, next) => {
 
 app.post('/api/auth/login', async (c) => {
   const body = await c.req.json().catch(() => ({}))
-  const { provider } = body
   const provider = body?.provider || 'unknown'
 
   return c.json({
@@ -40,30 +40,17 @@ app.post('/api/auth/login', async (c) => {
     user: {
       name: 'Admin User',
       email: 'admin@yourdomain.com',
-      provider: provider || 'unknown',
       provider,
     },
   })
 })
 
 app.post('/api/test-keys', async (c) => {
-  const { apiKey } = await c.req.json()
+  const { provider, apiKey, extraData } = await c.req.json()
 
   if (!apiKey) {
-    return c.json({ success: false, message: 'Missing Gemini API key.' }, 400)
+    return c.json({ success: false, message: 'Missing API key.' }, 400)
   }
-
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: "reply 'ok'" }] }] }),
-    })
-
-    if (res.ok) return c.json({ success: true, message: 'Gemini API Key is valid and working!' })
-    return c.json({ success: false, message: 'Invalid Gemini API Key.' }, 400)
-  const { provider, apiKey, extraData } = await c.req.json()
 
   try {
     if (provider === 'gemini') {
@@ -98,109 +85,14 @@ app.post('/api/test-keys', async (c) => {
   }
 })
 
-app.post('/api/chat', async (c) => {
-  const { messages, connectedApps } = await c.req.json()
-  const { messages = [], connectedApps = [] } = await c.req.json()
-  const apiKey = c.env.GEMINI_API_KEY
+app.use('/api/oauth/*', oauthApp)
 
-  if (!apiKey) {
-    return c.json({ error: 'Gemini API key is missing in Cloudflare environment.' }, 500)
-  }
-
-  const contents = messages.map((msg: any) => ({
-  const typedMessages = messages as ChatMessage[]
-  const latestUserMessage = [...typedMessages].reverse().find((msg) => msg.role === 'user')?.text?.toLowerCase() || ''
-
-  if (latestUserMessage.includes('cloudflare status')) {
-    return c.json({ reply: 'Cloudflare status: All systems operational. Active workers: 4. Cache hit ratio: 94%.' })
-  }
-
-  const contents = typedMessages.map((msg) => ({
-    role: msg.role === 'assistant' ? 'model' : 'user',
-    parts: [{ text: msg.text }],
-  }))
-
-  const payload = {
-    contents,
-    systemInstruction: {
-      parts: [{
-        text: `You are Atom, an AI assistant. You currently have access to these connected apps: ${connectedApps.join(', ')}. Keep your answers concise, direct, and helpful.`,
-        text: `You are Atom, an AI assistant for a productivity app. Connected apps: ${connectedApps.join(', ') || 'none'}. Keep answers concise and practical.`,
-      }],
-    },
-  }
-
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`
-    const model = c.env.GEMINI_MODEL || DEFAULT_MODEL
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    })
-
-    if (!response.ok) {
-      return c.json({ error: 'Failed to generate response from Gemini.' }, 502)
-    }
-
-    const data = await response.json()
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "I couldn't generate a response."
-    const data: any = await response.json()
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || "I couldn't generate a response."
-
-    return c.json({ reply: text })
-  } catch {
-    return c.json({ error: 'Internal server error while processing chat.' }, 500)
-  }
-})
-
-app.post('/api/integrations/whatsapp/send', async (c) => {
-  const token = c.env.WHATSAPP_TOKEN
-  const phoneId = c.env.WHATSAPP_PHONE_ID
-
-  if (!token || !phoneId) {
-    return c.json({ error: 'WhatsApp credentials are not configured in the environment.' }, 500)
-  }
-
-  const { to, message } = await c.req.json()
-  if (!to || !message) {
-    return c.json({ error: 'Missing "to" (phone number) or "message" field.' }, 400)
-  }
-
-  try {
-    const url = `https://graph.facebook.com/v19.0/${phoneId}/messages`
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        messaging_product: 'whatsapp',
-        to,
-        type: 'text',
-        text: { body: message },
-      }),
-    })
-
-    const data: any = await response.json()
-
-    if (!response.ok) {
-      return c.json({ success: false, error: 'Failed to send WhatsApp message.', details: data }, 502)
-    }
-
-    return c.json({ success: true, messageId: data.messages?.[0]?.id })
-  } catch {
-    return c.json({ success: false, error: 'Internal server error sending WhatsApp message.' }, 500)
-  }
-})
-
-app.get('/api/integrations/cloudflare/status', (c) => {
-  return c.json({
-    status: 'All systems operational',
-    active_workers: 4,
-    cache_hit_ratio: '94%',
+app.use('/trpc/*', async (c, next) => {
+  return fetchRequestHandler({
+    endpoint: '/trpc',
+    req: c.req.raw,
+    router: appRouter,
+    createContext,
   })
 })
 
