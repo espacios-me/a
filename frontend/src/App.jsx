@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import {
   Atom,
   Grid3X3,
@@ -255,6 +255,26 @@ function IntegrationsScreen() {
 }
 
 function PanelScreen() {
+  const [summary, setSummary] = useState(null)
+
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/panel/summary`)
+        if (!res.ok) throw new Error('summary failed')
+        const data = await res.json()
+        setSummary(data)
+      } catch {
+        setSummary(null)
+      }
+    }
+    run()
+  }, [])
+
+  const memoryCount = summary?.memories ?? 128
+  const contextCount = summary?.contexts ?? 24
+  const recentMemories = summary?.recentMemories?.length ? summary.recentMemories : memoryCards
+
   return (
     <div className="px-6 pb-36 pt-8 text-white">
       <h1 className="mb-4 text-center text-[52px] font-semibold tracking-[0.1em]">MEMORY PANEL</h1>
@@ -265,12 +285,12 @@ function PanelScreen() {
       <div className="mt-6 grid grid-cols-2 gap-4">
         <GlassCard className="p-5">
           <div className="text-[20px] tracking-[0.2em] text-white/50">MEMORIES</div>
-          <div className="mt-2 text-[56px] font-semibold">128</div>
+          <div className="mt-2 text-[56px] font-semibold">{memoryCount}</div>
           <p className="text-[20px] leading-relaxed text-white/55">Saved from email, docs, chat</p>
         </GlassCard>
         <GlassCard className="p-5">
           <div className="text-[20px] tracking-[0.2em] text-white/50">CONTEXTS</div>
-          <div className="mt-2 text-[56px] font-semibold">24</div>
+          <div className="mt-2 text-[56px] font-semibold">{contextCount}</div>
           <p className="text-[20px] leading-relaxed text-white/55">Active areas of focus</p>
         </GlassCard>
       </div>
@@ -285,13 +305,13 @@ function PanelScreen() {
         </div>
 
         <div className="space-y-4">
-          {memoryCards.map((card) => (
-            <GlassCard key={card.id} className="p-5">
+          {recentMemories.map((card, index) => (
+            <GlassCard key={card.id || index} className="p-5">
               <div className="mb-2 flex justify-end">
-                <span className="rounded-full border border-white/20 px-4 py-1 text-[16px] text-white/60">{card.tag}</span>
+                <span className="rounded-full border border-white/20 px-4 py-1 text-[16px] text-white/60">{card.tag || card.kind || 'MEMORY'}</span>
               </div>
-              <h3 className="text-[44px] leading-tight">{card.title}</h3>
-              <p className="mt-2 text-[20px] leading-relaxed text-white/55">{card.body}</p>
+              <h3 className="text-[44px] leading-tight">{card.title || card.summary}</h3>
+              <p className="mt-2 text-[20px] leading-relaxed text-white/55">{card.body || `Confidence: ${Math.round((card.confidence || 0.85) * 100)}%`}</p>
             </GlassCard>
           ))}
         </div>
@@ -301,14 +321,42 @@ function PanelScreen() {
 }
 
 function FriendsScreen() {
+  const [friends, setFriends] = useState([])
+
+  useEffect(() => {
+    const run = async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/friends`)
+        if (!res.ok) throw new Error('friends failed')
+        const data = await res.json()
+        setFriends(data.friends || [])
+      } catch {
+        setFriends([])
+      }
+    }
+    run()
+  }, [])
+
+  const fallbackFriends = [
+    { id: 'f_1', name: 'Design Lead', contextCount: 7 },
+    { id: 'f_2', name: 'Product Team', contextCount: 11 },
+  ]
+  const displayed = friends.length ? friends : fallbackFriends
+
   return (
     <div className="px-6 pb-36 pt-8 text-white">
       <h1 className="mb-5 text-center text-[52px] font-semibold">FRIENDS</h1>
-      <GlassCard className="p-6">
-        <p className="text-center text-[22px] leading-relaxed text-white/70">
-          Shared workspaces and friend collaboration are coming next. Your backend routes are already wired for future integrations.
-        </p>
-      </GlassCard>
+      <div className="space-y-4">
+        {displayed.map((friend) => (
+          <GlassCard key={friend.id} className="p-5">
+            <div className="flex items-center justify-between">
+              <h2 className="text-[30px] font-medium">{friend.name}</h2>
+              <span className="rounded-full border border-white/20 px-4 py-1 text-[16px] text-white/65">{friend.contextCount} contexts</span>
+            </div>
+            <p className="mt-2 text-[18px] text-white/60">Relationship context and follow-up cues are tracked here.</p>
+          </GlassCard>
+        ))}
+      </div>
     </div>
   )
 }

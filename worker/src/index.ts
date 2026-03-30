@@ -7,6 +7,7 @@ type Bindings = {
   FRONTEND_ORIGIN?: string
   WHATSAPP_TOKEN?: string
   WHATSAPP_PHONE_ID?: string
+  ATOM_API_TOKEN?: string
 }
 
 type ChatMessage = {
@@ -14,9 +15,62 @@ type ChatMessage = {
   text: string
 }
 
+type IngestSource = 'gmail' | 'google_drive' | 'linear' | 'vercel' | 'whatsapp' | 'calendar'
+
+type EventRecord = {
+  id: string
+  source: IngestSource
+  title: string
+  actor?: string
+  timestamp: string
+  tags: string[]
+}
+
+type MemoryRecord = {
+  id: string
+  summary: string
+  kind: 'pattern' | 'project' | 'person' | 'preference'
+  confidence: number
+}
+
 const DEFAULT_MODEL = 'gemini-2.0-flash'
+const ALLOWED_SOURCES: IngestSource[] = ['gmail', 'google_drive', 'linear', 'vercel', 'whatsapp', 'calendar']
 
 const app = new Hono<{ Bindings: Bindings }>()
+
+const mockEvents: EventRecord[] = [
+  {
+    id: 'evt_1',
+    source: 'calendar',
+    title: 'Team sync at 10:00 AM',
+    actor: 'Product Team',
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
+    tags: ['meeting', 'today'],
+  },
+  {
+    id: 'evt_2',
+    source: 'gmail',
+    title: 'Inbox summary: 12 unread, 2 urgent',
+    actor: 'Gmail',
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+    tags: ['email', 'summary'],
+  },
+]
+
+const mockMemories: MemoryRecord[] = [
+  {
+    id: 'mem_1',
+    summary: 'You prioritize fast, minimal interfaces.',
+    kind: 'pattern',
+    confidence: 0.92,
+  },
+  {
+    id: 'mem_2',
+    summary: 'Primary collaborators: Product Team, Design Lead.',
+    kind: 'person',
+    confidence: 0.85,
+  },
+]
 
 app.use('/api/*', async (c, next) => {
   const origin = c.env.FRONTEND_ORIGIN || '*'
@@ -26,6 +80,15 @@ app.use('/api/*', async (c, next) => {
     allowMethods: ['POST', 'GET', 'OPTIONS'],
   })(c, next)
 })
+
+function isAuthorized(c: Parameters<Parameters<typeof app.get>[1]>[0]) {
+  const configuredToken = c.env.ATOM_API_TOKEN
+  if (!configuredToken) return true
+
+  const header = c.req.header('Authorization') || ''
+  const bearer = header.startsWith('Bearer ') ? header.slice(7) : ''
+  return bearer === configuredToken
+}
 
 app.post('/api/auth/login', async (c) => {
   const body = await c.req.json().catch(() => ({} as { provider?: string }))
@@ -88,6 +151,98 @@ app.post('/api/test-keys', async (c) => {
   }
 })
 
+app.post('/api/ingest/:source', async (c) => {
+  if (!isAuthorized(c)) {
+    return c.json({ error: 'Unauthorized ingest request.' }, 401)
+  }
+
+  const source = c.req.param('source') as IngestSource
+  if (!ALLOWED_SOURCES.includes(source)) {
+    return c.json({ error: 'Unsupported source.', allowedSources: ALLOWED_SOURCES }, 400)
+  }
+
+  const body = await c.req.json<{
+    events?: Array<Partial<EventRecord>>
+  }>().catch(() => ({ events: [] }))
+
+  const timestamp = new Date().toISOString()
+  const incomingEvents = (body.events || []).map((event, index) => ({
+    id: event.id || `evt_${Date.now()}_${index}`,
+    source,
+    title: event.title || `${source} event`,
+    actor: event.actor || source,
+    timestamp: event.timestamp || timestamp,
+    tags: Array.isArray(event.tags) ? event.tags : [source],
+  }))
+
+  mockEvents.unshift(...incomingEvents)
+
+  if (incomingEvents.length > 0) {
+    mockMemories.unshift({
+      id: `mem_${Date.now()}`,
+      summary: `Ingested ${incomingEvents.length} new ${source} event(s).`,
+      kind: 'project',
+      confidence: 0.8,
+    })
+  }
+
+  return c.json({
+    success: true,
+    source,
+    ingested: incomingEvents.length,
+    totalEvents: mockEvents.length,
+  })
+})
+
+app.get('/api/events', (c) => {
+  if (!isAuthorized(c)) {
+    return c.json({ error: 'Unauthorized events request.' }, 401)
+  }
+
+  const source = c.req.query('source')
+  const filtered = source ? mockEvents.filter((event) => event.source === source) : mockEvents
+
+  return c.json({
+    events: filtered.slice(0, 100),
+    total: filtered.length,
+  })
+})
+
+app.get('/api/panel/summary', (c) => {
+  if (!isAuthorized(c)) {
+    return c.json({ error: 'Unauthorized summary request.' }, 401)
+  }
+
+  const contexts = new Set(mockEvents.map((event) => event.source)).size
+  const people = [...new Set(mockEvents.map((event) => event.actor).filter(Boolean))]
+
+  return c.json({
+    memories: mockMemories.length,
+    contexts,
+    peopleCount: people.length,
+    recentMemories: mockMemories.slice(0, 5),
+    recentEvents: mockEvents.slice(0, 8),
+  })
+})
+
+app.get('/api/friends', (c) => {
+  if (!isAuthorized(c)) {
+    return c.json({ error: 'Unauthorized friends request.' }, 401)
+  }
+
+  const relationships = [...new Set(mockEvents.map((event) => event.actor).filter(Boolean))].map((name, index) => ({
+    id: `friend_${index + 1}`,
+    name,
+    lastSeen: mockEvents.find((event) => event.actor === name)?.timestamp,
+    contextCount: mockEvents.filter((event) => event.actor === name).length,
+  }))
+
+  return c.json({
+    friends: relationships,
+    total: relationships.length,
+  })
+})
+
 app.post('/api/chat', async (c) => {
   const { messages = [], connectedApps = [] } = await c.req.json<{
     messages?: ChatMessage[]
@@ -106,6 +261,11 @@ app.post('/api/chat', async (c) => {
     return c.json({ reply: 'Cloudflare status: All systems operational. Active workers: 4. Cache hit ratio: 94%.' })
   }
 
+  if (latestUserMessage.includes('what do you remember')) {
+    const list = mockMemories.slice(0, 3).map((memory) => `• ${memory.summary}`).join('\n')
+    return c.json({ reply: `Here\'s what I currently remember:\n${list || 'No memory items yet.'}` })
+  }
+
   const contents = typedMessages.map((msg) => ({
     role: msg.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: msg.text }],
@@ -116,7 +276,7 @@ app.post('/api/chat', async (c) => {
     systemInstruction: {
       parts: [
         {
-          text: `You are Atom, an AI assistant for a productivity app. Connected apps: ${connectedApps.join(', ') || 'none'}. Keep answers concise and practical.`,
+          text: `You are Atom, an AI second-brain assistant. Connected apps: ${connectedApps.join(', ') || 'none'}. Help the user retrieve memory, summarize context, and suggest next actions with concise practical replies.`,
         },
       ],
     },
