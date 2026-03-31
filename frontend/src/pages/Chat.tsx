@@ -1,7 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
+import { useLocation } from 'wouter'
+import { ArrowUp, BrainCircuit } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
-import { useLocation } from 'wouter'
+import { IntegrationStateResponse, apiRequest } from '@/lib/api'
 
 interface Message {
   id: string
@@ -15,143 +17,179 @@ export default function Chat() {
   const [, setLocation] = useLocation()
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: '1',
+      id: 'intro',
       role: 'assistant',
-      content: 'Hello! I\'m your AI assistant. I can help you interact with all your connected integrations. What would you like to do?',
+      content: 'I can now reason over your connected tools. Ask for a status check, draft a message, or plan your next workflow.',
       timestamp: new Date(),
     },
   ])
+  const [connectedApps, setConnectedApps] = useState<string[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const scrollToBottom = () => {
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
+  }, [messages])
 
   useEffect(() => {
-    scrollToBottom()
-  }, [messages])
+    if (!user) return
+    apiRequest<IntegrationStateResponse>('/api/integrations/state')
+      .then((response) => {
+        const apps = response.providers
+          .filter((provider) => provider.connection && provider.enabled)
+          .map((provider) => provider.name)
+        setConnectedApps(apps)
+      })
+      .catch(() => setConnectedApps([]))
+  }, [user])
+
+  const sendMessage = async () => {
+    if (!input.trim() || loading) return
+
+    const userMessage: Message = {
+      id: `${Date.now()}`,
+      role: 'user',
+      content: input.trim(),
+      timestamp: new Date(),
+    }
+
+    const nextMessages = [...messages, userMessage]
+    setMessages(nextMessages)
+    setInput('')
+    setLoading(true)
+    setError(null)
+
+    try {
+      const response = await apiRequest<{ reply: string }>('/api/chat', {
+        method: 'POST',
+        body: JSON.stringify({
+          messages: nextMessages.map((message) => ({ role: message.role, text: message.content })),
+          connectedApps,
+        }),
+      })
+
+      setMessages((current) => [
+        ...current,
+        {
+          id: `${Date.now()}-assistant`,
+          role: 'assistant',
+          content: response.reply,
+          timestamp: new Date(),
+        },
+      ])
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to reach the assistant')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
-        <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-300 dark:border-gray-700 border-t-black dark:border-t-white"></div>
+      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-2 border-white/15 border-t-white" />
       </div>
     )
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
-        <div className="text-center">
-          <p className="text-gray-600 dark:text-gray-400 mb-4">Please sign in to access the chat</p>
+      <div className="min-h-screen bg-black text-white flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <p className="text-xl mb-4">Sign in before opening the connected assistant.</p>
           <Button onClick={() => setLocation('/')} variant="primary">
-            Back to Home
+            Back to home
           </Button>
         </div>
       </div>
     )
   }
 
-  const handleSendMessage = async () => {
-    if (!input.trim()) return
-
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: 'user',
-      content: input,
-      timestamp: new Date(),
-    }
-
-    setMessages((prev) => [...prev, userMessage])
-    setInput('')
-    setLoading(true)
-
-    setTimeout(() => {
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: `I received your message: "${userMessage.content}". In a production environment, this would be processed by Gemini with access to your integrations.`,
-        timestamp: new Date(),
-      }
-      setMessages((prev) => [...prev, assistantMessage])
-      setLoading(false)
-    }, 1000)
-  }
-
   return (
-    <div className="min-h-screen bg-white dark:bg-black flex flex-col">
-      {/* Header */}
-      <header className="border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
+    <div className="min-h-screen bg-black text-white flex flex-col">
+      <header className="border-b border-white/10 sticky top-0 z-40 bg-black/80 backdrop-blur-md">
+        <div className="max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">AI Assistant</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Powered by Gemini</p>
+            <p className="text-xs uppercase tracking-[0.35em] text-white/45 mb-2">Atom Chat</p>
+            <h1 className="text-2xl font-semibold tracking-[-0.03em]">Connected assistant</h1>
+            <div className="flex flex-wrap gap-2 mt-3">
+              {connectedApps.length > 0 ? connectedApps.map((app) => (
+                <span key={app} className="px-3 py-1 rounded-full text-xs border border-white/10 bg-white/[0.04] text-white/65">
+                  {app}
+                </span>
+              )) : (
+                <span className="text-sm text-white/45">No enabled integrations yet</span>
+              )}
+            </div>
           </div>
-          <Button onClick={() => setLocation('/integrations')} variant="secondary" size="sm">
-            Back
+          <Button variant="secondary" onClick={() => setLocation('/integrations')}>
+            Dashboard
           </Button>
         </div>
       </header>
 
-      {/* Chat Container */}
       <div className="flex-1 overflow-y-auto max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-4">
           {messages.map((message) => (
             <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div
-                className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
+                className={`max-w-[85%] sm:max-w-xl px-4 py-3 rounded-3xl ${
                   message.role === 'user'
-                    ? 'bg-black text-white dark:bg-white dark:text-black rounded-br-none'
-                    : 'bg-gray-100 dark:bg-gray-900 text-black dark:text-white rounded-bl-none border border-gray-200 dark:border-gray-800'
+                    ? 'bg-white text-black rounded-br-lg'
+                    : 'bg-white/[0.05] border border-white/10 text-white rounded-bl-lg'
                 }`}
               >
-                <p className="text-sm">{message.content}</p>
-                <span className="text-xs opacity-70 mt-1 block">
+                {message.role === 'assistant' && (
+                  <div className="flex items-center gap-2 text-white/45 text-xs uppercase tracking-[0.25em] mb-2">
+                    <BrainCircuit className="h-3.5 w-3.5" />
+                    Atom
+                  </div>
+                )}
+                <p className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap">{message.content}</p>
+                <span className={`text-xs mt-2 block ${message.role === 'user' ? 'text-black/55' : 'text-white/40'}`}>
                   {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
             </div>
           ))}
+
           {loading && (
             <div className="flex justify-start">
-              <div className="bg-gray-100 dark:bg-gray-900 text-black dark:text-white px-4 py-3 rounded-2xl rounded-bl-none border border-gray-200 dark:border-gray-800">
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-gray-600 dark:bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                    <div className="w-2 h-2 bg-gray-600 dark:bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                    <div className="w-2 h-2 bg-gray-600 dark:bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                  </div>
-                </div>
+              <div className="bg-white/[0.05] border border-white/10 rounded-3xl rounded-bl-lg px-4 py-3 text-white/70">
+                Thinking through your connected tools...
               </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+              {error}
             </div>
           )}
           <div ref={messagesEndRef} />
         </div>
       </div>
 
-      {/* Input Area */}
-      <div className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-black">
+      <div className="border-t border-white/10 bg-black/90">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex gap-3">
-            <input
-              type="text"
+          <div className="rounded-[1.75rem] border border-white/10 bg-white/[0.03] p-2 flex items-end gap-2">
+            <textarea
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder="Ask me anything..."
-              className="flex-1 px-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-black dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:border-black dark:focus:border-white transition-smooth disabled:opacity-50"
-              disabled={loading}
+              onChange={(event) => setInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' && !event.shiftKey) {
+                  event.preventDefault()
+                  void sendMessage()
+                }
+              }}
+              rows={1}
+              placeholder="Ask Atom to work across your integrations..."
+              className="flex-1 min-h-[52px] max-h-40 resize-none bg-transparent border-0 focus:border-0 focus:shadow-none px-4 py-3"
             />
-            <Button
-              onClick={handleSendMessage}
-              disabled={loading || !input.trim()}
-              variant="primary"
-              size="md"
-              className="px-4"
-            >
-              Send
+            <Button variant="primary" onClick={() => void sendMessage()} disabled={loading || !input.trim()} className="rounded-2xl px-4 h-[52px]">
+              <ArrowUp className="h-4 w-4" />
             </Button>
           </div>
         </div>

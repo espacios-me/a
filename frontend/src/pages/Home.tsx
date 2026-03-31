@@ -1,127 +1,196 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+import { useLocation } from 'wouter'
+import { ArrowRight, Github, Mail, ShieldCheck, Sparkles, Waypoints } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardTitle } from '@/components/ui/card'
 import { useAuth } from '@/hooks/useAuth'
-import { useLocation } from 'wouter'
+import { apiRequest, AuthProvidersResponse, ProviderId, beginSSO, loginDemo } from '@/lib/api'
+
+const providerIcons: Record<string, React.ReactNode> = {
+  google: <Mail className="h-4 w-4" />,
+  github: <Github className="h-4 w-4" />,
+  demo: <Sparkles className="h-4 w-4" />,
+}
 
 export default function Home() {
   const { user, loading } = useAuth()
   const [, setLocation] = useLocation()
+  const [providers, setProviders] = useState<AuthProvidersResponse['providers']>([])
+
+  useEffect(() => {
+    apiRequest<AuthProvidersResponse>('/api/auth/providers')
+      .then((response) => setProviders(response.providers))
+      .catch(() => setProviders([]))
+  }, [])
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
-        <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-300 dark:border-gray-700 border-t-black dark:border-t-white"></div>
+      <div className="min-h-screen flex items-center justify-center bg-black text-white">
+        <div className="animate-spin rounded-full h-12 w-12 border-2 border-gray-700 border-t-white"></div>
       </div>
     )
   }
 
+  const authButtons = providers.length > 0
+    ? providers
+    : [
+        { id: 'google' as const, name: 'Google', available: true, supportsSSO: true, description: 'Google Workspace SSO' },
+        { id: 'github' as const, name: 'GitHub', available: true, supportsSSO: true, description: 'GitHub SSO' },
+        { id: 'demo' as const, name: 'Demo access', available: true, supportsSSO: false, description: 'Local demo mode' },
+      ]
+
   return (
-    <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white">
-      {/* Header */}
-      <header className="border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md">
+    <div className="min-h-screen bg-black text-white">
+      <header className="border-b border-white/10 bg-black/80 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">Integrations</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Connect all your services</p>
+            <p className="text-xs uppercase tracking-[0.35em] text-white/60 mb-2">Atom App</p>
+            <h1 className="text-2xl sm:text-3xl font-semibold">Integrations that feel invisible</h1>
           </div>
-          {user ? (
-            <Button onClick={() => setLocation('/integrations')} variant="primary">
-              Dashboard
-            </Button>
-          ) : (
-            <Button onClick={() => setLocation('/integrations')} variant="primary">
-              Get Started
-            </Button>
-          )}
+          <Button onClick={() => setLocation(user ? '/integrations' : '/chat')} variant="secondary">
+            {user ? 'Open dashboard' : 'Preview chat'}
+          </Button>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-32">
-        <div className="text-center mb-20">
-          <h1 className="text-5xl sm:text-6xl font-bold mb-6 leading-tight">
-            Connect Everything
-          </h1>
-          <p className="text-xl text-gray-600 dark:text-gray-400 mb-8 max-w-2xl mx-auto leading-relaxed">
-            Manage all your integrations in one elegant, unified interface. Connect GitHub, Gmail, Google Drive, WhatsApp, Cloudflare, and more.
-          </p>
-          <Button
-            onClick={() => setLocation('/integrations')}
-            variant="primary"
-            size="lg"
-            className="px-8 py-3"
-          >
-            Explore Now
-          </Button>
-        </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20">
+        <section className="grid lg:grid-cols-[1.15fr_0.85fr] gap-8 items-start">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/10 bg-white/5 text-sm text-white/70 mb-6">
+              <Waypoints className="h-4 w-4" />
+              One place to connect, monitor, and trust your workflows
+            </div>
+            <h2 className="text-5xl sm:text-6xl font-semibold tracking-[-0.04em] leading-[0.95] mb-6">
+              Seamless SSO, cleaner ops, and a premium integrations layer.
+            </h2>
+            <p className="text-lg sm:text-xl text-white/60 max-w-2xl mb-8 leading-relaxed">
+              Atom now centers integrations around a simple truth: connecting a tool should feel as calm as using it.
+              Sign in once, enable only what you need, and keep every surface reliable across mobile and desktop.
+            </p>
 
-        {/* Features Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
-          <Card variant="flat">
-            <CardContent>
-              <div className="mb-4">
-                <div className="w-12 h-12 rounded-xl bg-black dark:bg-white flex items-center justify-center mb-4">
-                  <span className="text-2xl">⚡</span>
-                </div>
-              </div>
-              <CardTitle>Lightning Fast</CardTitle>
-              <CardDescription>
-                Powered by Cloudflare Workers for instant, globally distributed performance.
-              </CardDescription>
-            </CardContent>
-          </Card>
+            <div className="flex flex-wrap gap-3 mb-10">
+              {user ? (
+                <>
+                  <Button variant="primary" size="lg" onClick={() => setLocation('/integrations')}>
+                    Go to integrations
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                  <Button variant="outline" size="lg" onClick={() => setLocation('/chat')}>
+                    Open AI chat
+                  </Button>
+                </>
+              ) : (
+                authButtons.map((provider) => (
+                  <Button
+                    key={provider.id}
+                    variant={provider.id === 'demo' ? 'secondary' : 'primary'}
+                    size="lg"
+                    disabled={!provider.available}
+                    onClick={() => {
+                      if (provider.id === 'demo') {
+                        void loginDemo('demo').then(() => setLocation('/integrations'))
+                        return
+                      }
+                      beginSSO(provider.id as ProviderId, '/integrations')
+                    }}
+                  >
+                    {providerIcons[provider.id]}
+                    {provider.id === 'demo' ? 'Try demo' : `Continue with ${provider.name}`}
+                  </Button>
+                ))
+              )}
+            </div>
 
-          <Card variant="flat">
-            <CardContent>
-              <div className="mb-4">
-                <div className="w-12 h-12 rounded-xl bg-black dark:bg-white flex items-center justify-center mb-4">
-                  <span className="text-2xl">🔒</span>
-                </div>
-              </div>
-              <CardTitle>Secure & Private</CardTitle>
-              <CardDescription>
-                End-to-end encryption for all your credentials. Your data stays yours.
-              </CardDescription>
-            </CardContent>
-          </Card>
-
-          <Card variant="flat">
-            <CardContent>
-              <div className="mb-4">
-                <div className="w-12 h-12 rounded-xl bg-black dark:bg-white flex items-center justify-center mb-4">
-                  <span className="text-2xl">🤖</span>
-                </div>
-              </div>
-              <CardTitle>AI-Powered</CardTitle>
-              <CardDescription>
-                Interact with all your services through a single Gemini-powered chatbox.
-              </CardDescription>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Supported Integrations */}
-        <div className="text-center">
-          <h2 className="text-3xl font-bold mb-12">Supported Integrations</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {['GitHub', 'Gmail', 'Outlook', 'Google Drive', 'WhatsApp', 'Cloudflare'].map((service) => (
-              <Card key={service} variant="flat">
-                <CardContent className="text-center">
-                  <p className="font-semibold text-sm">{service}</p>
-                </CardContent>
-              </Card>
-            ))}
+            <div className="grid sm:grid-cols-3 gap-4">
+              {[
+                {
+                  title: 'Intentional UX',
+                  description: 'Focused cards, fewer decisions, and delightfully clear connection states.',
+                },
+                {
+                  title: 'Production-ready auth',
+                  description: 'Signed session cookies, real OAuth callback handling, and graceful config fallbacks.',
+                },
+                {
+                  title: 'Operational calm',
+                  description: 'Diagnostics, toggles, account labels, and empty states built for real teams.',
+                },
+              ].map((item) => (
+                <Card key={item.title} variant="flat" className="bg-white/5 border border-white/10">
+                  <CardContent>
+                    <CardTitle className="text-white text-lg">{item.title}</CardTitle>
+                    <CardDescription className="text-white/60">{item.description}</CardDescription>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-200 dark:border-gray-800 mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 text-center text-gray-600 dark:text-gray-400 text-sm">
-          <p>&copy; 2026 Integrations Hub. All rights reserved.</p>
-        </div>
-      </footer>
+          <Card variant="elevated" className="bg-[#0a0a0d] border border-white/10 shadow-2xl shadow-black/50 overflow-hidden">
+            <CardContent className="p-0">
+              <div className="p-6 sm:p-8 border-b border-white/10">
+                <p className="text-xs uppercase tracking-[0.35em] text-white/50 mb-4">Preview</p>
+                <div className="rounded-[2rem] border border-white/10 bg-black p-5 shadow-inner shadow-white/5">
+                  <div className="rounded-[1.75rem] bg-white/[0.03] border border-white/10 p-5 space-y-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.35em] text-white/45">Atom Integrations</p>
+                      <h3 className="text-2xl font-semibold mt-3">Connect Google Workspace</h3>
+                      <p className="text-white/55 mt-2 leading-relaxed">Toggle Gmail, Calendar, and Drive from one calm workspace card.</p>
+                    </div>
+                    {[
+                      'keifferjapeth@gmail.com',
+                      'thekeifferjapeth@gmail.com',
+                      'propertiestage@gmail.com',
+                    ].map((email, index) => (
+                      <div key={email} className="rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-full bg-white/20 text-white/80 flex items-center justify-center font-semibold">
+                            {email[0].toUpperCase()}
+                          </div>
+                          <span className="truncate text-white/85">{email}</span>
+                        </div>
+                        <div className={`w-12 h-7 rounded-full p-1 ${index === 0 ? 'bg-white' : 'bg-white/20'} transition-smooth`}>
+                          <div className={`w-5 h-5 rounded-full ${index === 0 ? 'bg-black ml-auto' : 'bg-black/90'}`} />
+                        </div>
+                      </div>
+                    ))}
+                    <div className="grid grid-cols-3 gap-3 pt-2 text-sm text-white/65">
+                      {['Google Calendar', 'Gmail', 'Drive'].map((chip) => (
+                        <div key={chip} className="rounded-xl border border-white/10 px-3 py-2 bg-white/[0.03] text-center truncate">
+                          {chip}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6 sm:p-8 grid sm:grid-cols-2 gap-4 bg-gradient-to-b from-transparent to-white/[0.02]">
+                {[
+                  {
+                    icon: <ShieldCheck className="h-5 w-5" />,
+                    title: 'Signed sessions',
+                    description: 'Secure cookie-based auth for the dashboard and callback flows.',
+                  },
+                  {
+                    icon: <Sparkles className="h-5 w-5" />,
+                    title: 'Graceful fallbacks',
+                    description: 'Demo mode keeps product review moving before secrets are wired.',
+                  },
+                ].map((item) => (
+                  <div key={item.title} className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
+                    <div className="w-10 h-10 rounded-2xl bg-white/10 flex items-center justify-center mb-4">
+                      {item.icon}
+                    </div>
+                    <h3 className="font-semibold text-lg mb-1">{item.title}</h3>
+                    <p className="text-white/60 text-sm leading-relaxed">{item.description}</p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+      </main>
     </div>
   )
 }
