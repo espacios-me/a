@@ -10,21 +10,29 @@ routes = [
 ]
 
 [vars]
-# Add your environment variables here
+# Public origin allowed to call this worker with credentials.
+# FRONTEND_ORIGIN = "https://integrations.example.com"
+
+# Session signing secret.
+# APP_SESSION_SECRET = "replace-with-a-long-random-secret"
+
+# AI chat.
 # GEMINI_API_KEY = "..."
-# GITHUB_CLIENT_ID = "..."
-# GITHUB_CLIENT_SECRET = "..."
+# GEMINI_MODEL = "gemini-2.0-flash"
+
+# Google Workspace SSO.
 # GOOGLE_CLIENT_ID = "..."
 # GOOGLE_CLIENT_SECRET = "..."
-# MICROSOFT_CLIENT_ID = "..."
-# MICROSOFT_CLIENT_SECRET = "..."
+# GOOGLE_REDIRECT_URI = "https://api.example.com/api/auth/sso/callback"
+
+# GitHub SSO.
+# GITHUB_CLIENT_ID = "..."
+# GITHUB_CLIENT_SECRET = "..."
+# GITHUB_REDIRECT_URI = "https://api.example.com/api/auth/sso/callback"
+
+# Optional WhatsApp sending.
 # WHATSAPP_TOKEN = "..."
 # WHATSAPP_PHONE_ID = "..."
-# WHATSAPP_CLIENT_ID = "..."
-# WHATSAPP_CLIENT_SECRET = "..."
-# CLOUDFLARE_CLIENT_ID = "..."
-# CLOUDFLARE_CLIENT_SECRET = "..."
-# FRONTEND_ORIGIN = "https://integrations-hub.pages.dev"
 
 [build]
 command = "npm run build"

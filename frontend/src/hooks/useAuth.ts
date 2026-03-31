@@ -1,60 +1,44 @@
-import { useState, useEffect } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { SessionUser, logoutRequest, apiRequest } from '@/lib/api'
 
-interface User {
-  id: string
-  name: string
-  email: string
+interface UseAuthValue {
+  user: SessionUser | null
+  loading: boolean
+  error: string | null
+  refresh: () => Promise<void>
+  logout: () => Promise<void>
 }
 
-export function useAuth() {
-  const [user, setUser] = useState<User | null>(null)
+export function useAuth(): UseAuthValue {
+  const [user, setUser] = useState<SessionUser | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    // Simulate checking authentication status
-    // In production, this would check with your backend
-    const checkAuth = async () => {
-      try {
-        // Simulate API call
-        const response = await fetch('/api/auth/me', {
-          credentials: 'include',
-        }).catch(() => null)
-
-        if (response?.ok) {
-          const userData = await response.json()
-          setUser(userData)
-        } else {
-          // Check for mock user in localStorage for demo
-          const mockUser = localStorage.getItem('mockUser')
-          if (mockUser) {
-            setUser(JSON.parse(mockUser))
-          }
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error)
-      } finally {
-        setLoading(false)
-      }
+  const refresh = useCallback(async () => {
+    setLoading(true)
+    try {
+      const data = await apiRequest<{ user: SessionUser | null }>('/api/auth/me')
+      setUser(data.user)
+      setError(null)
+    } catch (err) {
+      setUser(null)
+      setError(err instanceof Error ? err.message : 'Unable to load session')
+    } finally {
+      setLoading(false)
     }
-
-    checkAuth()
   }, [])
 
-  const logout = () => {
+  useEffect(() => {
+    void refresh()
+  }, [refresh])
+
+  const logout = useCallback(async () => {
+    await logoutRequest()
     setUser(null)
-    localStorage.removeItem('mockUser')
-    // In production, call logout API endpoint
-  }
+  }, [])
 
-  const login = (userData: User) => {
-    setUser(userData)
-    localStorage.setItem('mockUser', JSON.stringify(userData))
-  }
-
-  return {
-    user,
-    loading,
-    logout,
-    login,
-  }
+  return useMemo(
+    () => ({ user, loading, error, refresh, logout }),
+    [user, loading, error, refresh, logout],
+  )
 }
