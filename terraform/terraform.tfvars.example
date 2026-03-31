@@ -1,0 +1,6 @@
+cloudflare_api_token = "replace-me"
+account_id           = "replace-with-cloudflare-account-id"
+zone_id              = "replace-with-espacios-me-zone-id"
+destination_email    = "thekeifferjapeth@gmail.com"
+route_local_part     = "hello"
+route_domain         = "espacios.me"
