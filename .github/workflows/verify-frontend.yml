@@ -1,0 +1,29 @@
+name: Verify frontend build
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  frontend-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Clean install
+        run: npm ci
+
+      - name: Verify PostCSS selector parser resolves
+        run: node -e "require.resolve('postcss-selector-parser')"
+
+      - name: Build frontend workspace
+        run: npm run build --workspace=frontend
